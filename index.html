@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gestion Stock & Matériel | GM2026</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Toast Notification System -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Login Screen Overlay -->
+  <div id="login-screen" class="login-overlay">
+    <div class="login-card">
+      <div class="login-brand">
+        <span class="login-logo">📦</span>
+        <h2>GM2026</h2>
+        <p class="sub">Plateforme de Gestion de Stock & Matériel</p>
+      </div>
+
+      <div id="login-error" class="login-error-msg"></div>
+
+      <form id="form-login" onsubmit="return false;">
+        <div class="form-group">
+          <label for="login-email">Adresse Email</label>
+          <input type="email" id="login-email" required placeholder="nom@entreprise.com" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="login-pwd">Mot de passe</label>
+          <div class="pwd-wrapper">
+            <input type="password" id="login-pwd" required placeholder="••••••••" autocomplete="current-password">
+            <button type="button" id="btn-toggle-pwd" class="btn-toggle-pwd" title="Afficher/masquer">👁️</button>
+          </div>
+        </div>
+
+        <button type="submit" id="btn-submit-login" class="btn btn-primary w-100 btn-login">
+          Se connecter
+        </button>
+      </form>
+
+      <!-- Boutons d'accès rapide Démo -->
+      <div class="demo-access-box">
+        <div class="demo-title">⚡ Connexion Rapide (Comptes de Démonstration) :</div>
+        <div class="demo-buttons">
+          <button type="button" class="btn btn-sm btn-outline demo-btn" id="btn-quick-admin">
+            👑 <b>Admin</b> (Accès complet)
+          </button>
+          <button type="button" class="btn btn-sm btn-outline demo-btn" id="btn-quick-user">
+            📦 <b>Utilisateur / Magasinier</b> (Julie)
+          </button>
+        </div>
+        <div class="demo-credentials">
+          <small>• <b>Admin :</b> admin@entreprise.com / admin123</small><br>
+          <small>• <b>User :</b> julie.magasin@entreprise.com / user123</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <span class="logo">📦</span>
+      <div>
+        <h1 id="app-title">Gestion Stock & Matériel</h1>
+        <small class="subtitle">Système de gestion intégrée — GM2026</small>
+      </div>
+    </div>
+    <div class="head-right">
+      <span id="date" class="head-date"></span>
+      <div id="user-header-info" class="user-header-info">
+        <span class="user-pill">
+          👤 <b id="user-display-name">Admin</b> 
+          <span id="user-display-role" class="role-badge">Administrateur</span>
+        </span>
+        <button id="btn-logout" class="btn btn-sm btn-outline btn-logout" title="Se déconnecter">🚪 Déconnexion</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- Sidebar Navigation -->
+    <nav id="nav">
+      <a class="nav-item on" data-tab="dashboard"><span>🏠</span> Tableau de bord</a>
+      <a class="nav-item" data-tab="articles"><span>📦</span> Articles / Matériel</a>
+      <a class="nav-item" data-tab="fournisseurs"><span>🚚</span> Fournisseurs</a>
+      <a class="nav-item" data-tab="mouvements"><span>🔁</span> Mouvements</a>
+      <a class="nav-item" data-tab="inventaire"><span>📋</span> Inventaire</a>
+      <a class="nav-item" data-tab="bureaux"><span>🏢</span> Bureaux / Services</a>
+      <a class="nav-item" data-tab="utilisateurs"><span>👥</span> Utilisateurs</a>
+      <a class="nav-item" data-tab="rapports"><span>📊</span> Rapports</a>
+      <a class="nav-item" data-tab="parametres"><span>⚙️</span> Paramètres</a>
+
+      <div class="db-status">
+        <div class="db-indicator">● Base de données : <b id="dbs" class="ko">Connexion…</b></div>
+        <div class="version-tag">Version 2.0.0 • GM2026</div>
+      </div>
+    </nav>
+
+    <!-- Main Content Area with Dynamic Views -->
+    <main>
+
+      <!-- ======================================================== -->
+      <!-- TAB 1 : TABLEAU DE BORD                                 -->
+      <!-- ======================================================== -->
+      <section id="tab-dashboard" class="tab-content active">
+        <div class="dash-grid">
+          <div class="dash-main">
+            <div class="view-header">
+              <h2>📊 Tableau de bord</h2>
+              <p class="sub">Vue d’ensemble des stocks, matériels et flux récents</p>
+            </div>
+
+            <!-- KPIs -->
+            <div class="kpis">
+              <div class="kpi k1">
+                <span>Articles en stock</span>
+                <b id="kA">0</b>
+                <small>Total des références</small>
+              </div>
+              <div class="kpi k2">
+                <span>Unités physiques</span>
+                <b id="kB_units">0</b>
+                <small>Total pièces en stock</small>
+              </div>
+              <div class="kpi k-val">
+                <span>Valeur estimée</span>
+                <b id="kVal">0 €</b>
+                <small>Valorisation globale</small>
+              </div>
+              <div class="kpi k3">
+                <span>Entrées (30j)</span>
+                <b id="kC">0</b>
+                <small>Unités réceptionnées</small>
+              </div>
+              <div class="kpi k4">
+                <span>Sorties (30j)</span>
+                <b id="kD">0</b>
+                <small>Unités distribuées</small>
+              </div>
+            </div>
+
+            <!-- Aperçu rapide du stock -->
+            <div class="card">
+              <div class="bar">
+                <h2>🗂️ Aperçu rapide du catalogue</h2>
+                <div class="bar-actions">
+                  <button class="btn btn-sm" onclick="switchTab('articles')">Voir tout le catalogue ›</button>
+                  <button class="btn btn-sm btn-primary" id="btn-add-art-dash">＋ Nouvel article</button>
+                </div>
+              </div>
+              <div class="wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Réf.</th>
+                      <th>Désignation</th>
+                      <th>Catégorie</th>
+                      <th>Stock</th>
+                      <th>Statut</th>
+                      <th>Localisation</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tb-dash">
+                    <tr><td colspan="7" class="loading">Chargement des données…</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Répartition par catégorie -->
+            <div class="card p-16">
+              <h3>📈 Répartition du stock par catégorie</h3>
+              <div id="cat-bars" class="cat-bars-container"></div>
+            </div>
+          </div>
+
+          <!-- Aside droit pour le Dashboard -->
+          <aside class="side">
+            <!-- Alertes -->
+            <div class="card alert">
+              <h3>🔔 Alertes stock <span class="badge" id="nb">0</span></h3>
+              <div id="alerts" class="alert-list"></div>
+            </div>
+
+            <!-- Derniers mouvements -->
+            <div class="card">
+              <div class="card-head-row">
+                <h3>🔁 Derniers mouvements</h3>
+                <a href="#" class="link-sm" onclick="switchTab('mouvements'); return false;">Voir tout</a>
+              </div>
+              <div id="mv" class="mv-list"></div>
+            </div>
+
+            <!-- Actions rapides -->
+            <div class="card">
+              <h3>⚡ Actions rapides</h3>
+              <div class="qa">
+                <button id="qa-add-art"><span>➕</span>Article</button>
+                <button id="qa-entree"><span>📥</span>Entrée</button>
+                <button id="qa-sortie"><span>📤</span>Sortie</button>
+                <button onclick="switchTab('inventaire')"><span>📋</span>Inventaire</button>
+                <button onclick="switchTab('rapports')"><span>📊</span>Rapports</button>
+                <button onclick="window.print()"><span>🖨️</span>Imprimer</button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- TAB 2 : ARTICLES / MATÉRIEL                             -->
+      <!-- ======================================================== -->
+      <section id="tab-articles" class="tab-content">
+        <div class="view-header">
+          <h2>📦 Gestion des Articles & Matériels</h2>
+          <p class="sub">Inventaire détaillé, gestion des références et alertes</p>
+        </div>
+
+        <div class="card">
+          <div class="filters-bar">
+            <div class="filter-group">
+              <input id="q" placeholder="🔍 Rechercher par réf, nom, lieu..." class="search-input">
+              <select id="filter-cat" class="select-filter">
+                <option value="">Toutes les catégories</option>
+              </select>
+              <select id="filter-statut" class="select-filter">
+                <option value="">Tous les statuts</option>
+                <option value="disponible">🟢 En stock normal</option>
+                <option value="faible">🟠 Stock faible</option>
+                <option value="critique">🔴 Stock critique</option>
+              </select>
+            </div>
+            <div class="filter-actions">
+              <button class="btn btn-outline" id="btn-export-articles">📥 Exporter CSV</button>
+              <button class="btn btn-primary" id="btn-add-article">＋ Nouvel article</button>
+            </div>
+          </div>
+
+          <div class="wrap">
+            <table id="table-articles">
+              <thead>
+                <tr>
+                  <th>Réf.</th>
+                  <th>Désignation</th>
+                  <th>Catégorie</th>
+                  <th>Stock actuel</th>
+                  <th>Seuil Alerte</th>
+                  <th>Prix Unitaire</th>
+                  <th>Valeur Stock</th>
+                  <th>Localisation</th>
+                  <th>Fournisseur</th>
+                  <th style="text-align:right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tb">
+                <tr><td colspan="10" class="loading">Chargement des articles…</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="foot">
+            <span id="info">Affichage des articles...</span>
+            <div class="pg" id="pg"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- TAB 3 : FOURNISSEURS                                    -->
+      <!-- ======================================================== -->
+      <section id="tab-fournisseurs" class="tab-content">
+        <div class="view-header bar-flex">
+          <div>
+            <h2>🚚 Gestion des Fournisseurs</h2>
+            <p class="sub">Répertoire des partenaires, coordonnées et catalogue fourni</p>
+          </div>
+          <button class="btn btn-primary" id="btn-add-fournisseur">＋ Nouveau Fournisseur</button>
+        </div>
+
+        <div class="card">
+          <div class="wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nom du Fournisseur</th>
+                  <th>Contact</th>
+                  <th>Email</th>
+                  <th>Téléphone</th>
+                  <th>Adresse</th>
+                  <th>Articles liés</th>
+                  <th>Stock total fourni</th>
+                  <th style="text-align:right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tb-fournisseurs">
+                <tr><td colspan="8" class="loading">Chargement des fournisseurs…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- TAB 4 : MOUVEMENTS (ENTRÉES / SORTIES)                   -->
+      <!-- ======================================================== -->
+      <section id="tab-mouvements" class="tab-content">
+        <div class="view-header bar-flex">
+          <div>
+            <h2>🔁 Historique des Mouvements de Stock</h2>
+            <p class="sub">Traçabilité complète des réceptions, attributions et réformes</p>
+          </div>
+          <div class="flex-gap">
+            <button class="btn btn-success" id="btn-mouv-entree">📥 Nouvelle Entrée</button>
+            <button class="btn btn-warning" id="btn-mouv-sortie">📤 Nouvelle Sortie</button>
+            <button class="btn btn-outline" id="btn-export-mouvements">📥 Exporter CSV</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="filters-bar">
+            <div class="filter-group">
+              <input id="q-mouv" placeholder="🔍 Rechercher un mouvement (réf, nom, motif)..." class="search-input">
+              <select id="filter-mouv-type" class="select-filter">
+                <option value="all">Tous les types</option>
+                <option value="entree">🟢 Entrées uniquement</option>
+                <option value="sortie">🟠 Sorties uniquement</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date & Heure</th>
+                  <th>Type</th>
+                  <th>Référence</th>
+                  <th>Désignation</th>
+                  <th>Quantité</th>
+                  <th>Motif / Justification</th>
+                  <th>Localisation</th>
+                </tr>
+              </thead>
+              <tbody id="tb-mouvements">
+                <tr><td colspan="7" class="loading">Chargement des mouvements…</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="foot">
+            <span id="info-mouv"></span>
+            <div class="pg" id="pg-mouv"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- TAB 5 : INVENTAIRE PHYSIQUE                             -->
+      <!-- ======================================================== -->
+      <section id="tab-inventaire" class="tab-content">
+        <div class="view-header bar-flex">
+          <div>
+            <h2>📋 Inventaire Physique & Réconciliation</h2>
+            <p class="sub">Vérifiez les quantités réelles et ajustez automatiquement les écarts de stock</p>
+          </div>
+          <div class="flex-gap">
+            <button class="btn btn-outline" onclick="window.print()">🖨️ Fiche de comptage</button>
+            <button class="btn btn-primary" id="btn-refresh-inventaire">🔄 Actualiser</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="p-16 inv-banner">
+            <div>
+              <b>💡 Mode Réconciliation :</b> Saisissez le stock réel compté physiquement. L'écart est calculé instantanément. Cliquez sur <b>Ajuster</b> pour mettre à jour le stock et enregistrer le mouvement d'inventaire.
+            </div>
+          </div>
+          <div class="wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Réf.</th>
+                  <th>Désignation</th>
+                  <th>Catégorie</th>
+                  <th>Localisation</th>
+                  <th>Stock Théorique</th>
+                  <th>Stock Réel Compté</th>
+                  <th>Écart constaté</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="tb-inventaire">
+                <tr><td colspan="8" class="loading">Chargement de la liste d'inventaire…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- TAB 6 : BUREAUX / SERVICES                              -->
+      <!-- ======================================================== -->
+      <section id="tab-bureaux" class="tab-content">
+        <div class="view-header bar-flex">
+          <div>
+            <h2>🏢 Bureaux, Salles & Services</h2>
+            <p class="sub">Gestion des emplacements physiques et affectation des équipements</p>
+          </div>
+          <button class="btn btn-primary" id="btn-add-bureau">＋ Nouveau Lieu</button>
+        </div>
+
+        <div class="card">
+          <div class="wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nom / Numéro</th>
+                  <th>Bâtiment</th>
+                  <th>Étage</th>
+                  <th>Responsable</th>
+                  <th>Articles présents</th>
+                  <th>Total Unités</th>
+                  <th style="text-align:right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tb-bureaux">
+                <tr><td colspan="7" class="loading">Chargement des bureaux…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- TAB 7 : UTILISATEURS                                    -->
+      <!-- ======================================================== -->
+      <section id="tab-utilisateurs" class="tab-content">
+        <div class="view-header bar-flex">
+          <div>
+            <h2>👥 Gestion des Utilisateurs & Accès</h2>
+            <p class="sub">Comptes autorisés à consulter ou modifier le matériel</p>
+          </div>
+          <button class="btn btn-primary" id="btn-add-utilisateur">＋ Nouvel Utilisateur</button>
+        </div>
+
+        <div class="card">
+          <div class="wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nom complet</th>
+                  <th>Adresse Email</th>
+                  <th>Rôle attribué</th>
+                  <th>Statut</th>
+                  <th>Date d'ajout</th>
+                  <th style="text-align:right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tb-utilisateurs">
+                <tr><td colspan="6" class="loading">Chargement des utilisateurs…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- TAB 8 : RAPPORTS & ANALYTIQUE                           -->
+      <!-- ======================================================== -->
+      <section id="tab-rapports" class="tab-content">
+        <div class="view-header bar-flex">
+          <div>
+            <h2>📊 Rapports & Statistiques</h2>
+            <p class="sub">Indicateurs clés, valorisation et consommations</p>
+          </div>
+          <button class="btn btn-outline" onclick="window.print()">🖨️ Exporter / Imprimer le rapport</button>
+        </div>
+
+        <!-- 4 Cartes Synthèse -->
+        <div class="kpis">
+          <div class="kpi k1">
+            <span>Références totales</span>
+            <b id="rep-total-ref">0</b>
+            <small>Catalogue actif</small>
+          </div>
+          <div class="kpi k2">
+            <span>Unités en stock</span>
+            <b id="rep-total-unites">0</b>
+            <small>Pièces physiques</small>
+          </div>
+          <div class="kpi k-val">
+            <span>Valeur Globale</span>
+            <b id="rep-total-val">0 €</b>
+            <small>Valorisation estimée</small>
+          </div>
+          <div class="kpi k4">
+            <span>Sous le seuil d'alerte</span>
+            <b id="rep-alert-count">0</b>
+            <small>Articles à réapprovisionner</small>
+          </div>
+        </div>
+
+        <div class="grid-2col">
+          <!-- Valeur par Catégorie -->
+          <div class="card p-16">
+            <h3>📂 Valorisation et stock par catégorie</h3>
+            <div class="wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Catégorie</th>
+                    <th>Nb Réf.</th>
+                    <th>Unités</th>
+                    <th>Valeur (€)</th>
+                  </tr>
+                </thead>
+                <tbody id="rep-tb-cat"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Matériel le plus sorti -->
+          <div class="card p-16">
+            <h3>🔥 Articles les plus sollicités (Sorties)</h3>
+            <div class="wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Référence</th>
+                    <th>Désignation</th>
+                    <th>Total Sorties</th>
+                  </tr>
+                </thead>
+                <tbody id="rep-tb-sorties"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Répartition par Localisation -->
+        <div class="card p-16 mt-20">
+          <h3>🏢 Répartition du matériel par emplacement</h3>
+          <div class="wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Emplacement / Salle</th>
+                  <th>Nombre de types d'articles</th>
+                  <th>Total d'unités physiques</th>
+                </tr>
+              </thead>
+              <tbody id="rep-tb-loc"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- TAB 9 : PARAMÈTRES                                      -->
+      <!-- ======================================================== -->
+      <section id="tab-parametres" class="tab-content">
+        <div class="view-header">
+          <h2>⚙️ Configuration & Paramètres du Système</h2>
+          <p class="sub">Personnalisez les seuils d’alerte, l’identité et les options générales</p>
+        </div>
+
+        <div class="settings-grid">
+          <div class="card p-20">
+            <h3>🏢 Identité & Préférences</h3>
+            <div class="form-group mt-16">
+              <label>Nom de l'organisation / Entreprise</label>
+              <input id="cfg-nom" placeholder="Ex: GM2026 - Direction Générale">
+            </div>
+            <div class="form-group">
+              <label>Devise monétaire</label>
+              <input id="cfg-devise" value="€" style="max-width:120px">
+            </div>
+            <div class="form-group">
+              <label>Email pour alertes automatiques</label>
+              <input id="cfg-email" type="email" placeholder="alertes@entreprise.com">
+            </div>
+
+            <h3 class="mt-20">🔔 Gestion des Alertes de Stock</h3>
+            <div class="form-group mt-16">
+              <label>Seuil de stock faible par défaut (unités)</label>
+              <input id="cfg-seuil-alerte" type="number" min="1" value="5">
+              <small class="hint">Une notification orange apparaît lorsque le stock passe en dessous de cette valeur.</small>
+            </div>
+            <div class="form-group">
+              <label>Seuil de stock critique (unités)</label>
+              <input id="cfg-seuil-critique" type="number" min="0" value="2">
+              <small class="hint">Une alerte rouge urgente apparaît quand le stock atteint ce niveau.</small>
+            </div>
+
+            <div class="mt-20">
+              <button class="btn btn-primary" id="btn-save-params">💾 Enregistrer les modifications</button>
+            </div>
+          </div>
+
+          <div class="card p-20">
+            <h3>💾 Sauvegarde & Base de données</h3>
+            <p class="sub">Exportez vos données ou restaurez les paramètres initiaux</p>
+            
+            <div class="backup-actions mt-16">
+              <button class="btn btn-outline w-100" onclick="window.open('api.php?action=export_csv&export=articles')">
+                📥 Exporter tous les articles (CSV Excel)
+              </button>
+              <button class="btn btn-outline w-100 mt-10" onclick="window.open('api.php?action=export_csv&export=mouvements')">
+                📥 Exporter tous les mouvements (CSV Excel)
+              </button>
+            </div>
+
+            <div class="system-info-box mt-20">
+              <h4>ℹ️ Informations Techniques</h4>
+              <ul>
+                <li><b>Serveur :</b> Apache / MySQL (XAMPP)</li>
+                <li><b>Base de données :</b> gestion_stock</li>
+                <li><b>Version GM :</b> 2.0.0 (Édition Complète)</li>
+                <li><b>Statut :</b> Opérationnel</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODALS / DIALOGS                                         -->
+  <!-- ======================================================== -->
+
+  <!-- 1. Modal Article (Ajout / Modification) -->
+  <dialog id="dlg-article">
+    <div class="dlg-header">
+      <h3 id="dlg-art-title">Nouvel article</h3>
+      <button class="close-btn" onclick="$('dlg-article').close()">✕</button>
+    </div>
+    <form id="form-article" onsubmit="return false;">
+      <label>Désignation <span class="req">*</span>
+        <input id="fn" required placeholder="Ex: Ordinateur portable Dell">
+      </label>
+      
+      <div class="grid-2col-form">
+        <label>Catégorie
+          <select id="fc">
+            <option>Informatique</option>
+            <option>Mobilier</option>
+            <option>Audiovisuel</option>
+            <option>Réseau</option>
+            <option>Consommable</option>
+            <option>Outillage</option>
+            <option>Autre</option>
+          </select>
+        </label>
+        <label>Localisation
+          <input id="fl" list="list-localisations" placeholder="Ex: Bureau 01" value="Bureau 01">
+          <datalist id="list-localisations"></datalist>
+        </label>
+      </div>
+
+      <div class="grid-3col-form">
+        <label>Stock Initial
+          <input id="fs" type="number" min="0" value="1">
+        </label>
+        <label>Seuil d'alerte
+          <input id="f-min" type="number" min="1" value="5">
+        </label>
+        <label>Prix Unitaire (€)
+          <input id="f-prix" type="number" step="0.01" min="0" value="0.00">
+        </label>
+      </div>
+
+      <label>Fournisseur associé
+        <select id="f-fournisseur">
+          <option value="">-- Aucun fournisseur sélectionné --</option>
+        </select>
+      </label>
+
+      <div class="dact">
+        <button type="button" class="btn gray" onclick="$('dlg-article').close()">Annuler</button>
+        <button type="button" class="btn btn-primary" id="btn-save-art">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 2. Modal Mouvement de Stock (Entrée / Sortie) -->
+  <dialog id="dlg-mouvement">
+    <div class="dlg-header">
+      <h3 id="dlg-mouv-title">Mouvement de stock</h3>
+      <button class="close-btn" onclick="$('dlg-mouvement').close()">✕</button>
+    </div>
+    <form id="form-mouvement" onsubmit="return false;">
+      <label>Type de mouvement
+        <select id="mouv-type">
+          <option value="entree">🟢 Entrée (Réception / Achat / Réassort)</option>
+          <option value="sortie">🟠 Sortie (Attribution / Prêt / Réforme)</option>
+        </select>
+      </label>
+
+      <label>Article concerné <span class="req">*</span>
+        <select id="mouv-article" required>
+          <option value="">-- Sélectionner un article --</option>
+        </select>
+      </label>
+
+      <div id="mouv-current-info" class="mouv-badge-info"></div>
+
+      <div class="grid-2col-form">
+        <label>Quantité <span class="req">*</span>
+          <input id="mouv-qte" type="number" min="1" value="1" required>
+        </label>
+        <label>Motif / Motif
+          <input id="mouv-motif" placeholder="Ex: Attribution poste, Réception fournisseur" list="list-motifs">
+          <datalist id="list-motifs">
+            <option value="Réception marchandise">
+            <option value="Commande réassort">
+            <option value="Retour de prêt">
+            <option value="Attribution de matériel">
+            <option value="Consommation interne">
+            <option value="Matériel défectueux / Casse">
+            <option value="Prêt temporaire">
+          </datalist>
+        </label>
+      </div>
+
+      <div class="dact">
+        <button type="button" class="btn gray" onclick="$('dlg-mouvement').close()">Annuler</button>
+        <button type="button" class="btn btn-primary" id="btn-submit-mouv">Valider le mouvement</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 3. Modal Fiche Article Complète (Consultation) -->
+  <dialog id="dlg-view" class="dlg-wide">
+    <div class="dlg-header">
+      <h3>📋 Fiche Article détaillée</h3>
+      <button class="close-btn" onclick="$('dlg-view').close()">✕</button>
+    </div>
+    <div id="view-content" class="view-art-body"></div>
+    <div class="dact">
+      <button class="btn gray" onclick="$('dlg-view').close()">Fermer</button>
+      <button class="btn btn-primary" id="btn-view-quick-mouv">⚡ Effectuer un mouvement</button>
+    </div>
+  </dialog>
+
+  <!-- 4. Modal Fournisseur -->
+  <dialog id="dlg-fournisseur">
+    <div class="dlg-header">
+      <h3 id="dlg-fourn-title">Nouveau Fournisseur</h3>
+      <button class="close-btn" onclick="$('dlg-fournisseur').close()">✕</button>
+    </div>
+    <form onsubmit="return false;">
+      <label>Nom de l'entreprise / Fournisseur <span class="req">*</span>
+        <input id="fourn-nom" required placeholder="Ex: Dell Technologies France">
+      </label>
+      <label>Nom du Contact
+        <input id="fourn-contact" placeholder="Ex: Jean Dupont">
+      </label>
+      <div class="grid-2col-form">
+        <label>Email
+          <input id="fourn-email" type="email" placeholder="contact@fournisseur.fr">
+        </label>
+        <label>Téléphone
+          <input id="fourn-tel" placeholder="01 23 45 67 89">
+        </label>
+      </div>
+      <label>Adresse physique
+        <input id="fourn-adresse" placeholder="12 Rue de l'Exemple, Paris">
+      </label>
+      <div class="dact">
+        <button type="button" class="btn gray" onclick="$('dlg-fournisseur').close()">Annuler</button>
+        <button type="button" class="btn btn-primary" id="btn-save-fourn">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 5. Modal Bureau / Salle -->
+  <dialog id="dlg-bureau">
+    <div class="dlg-header">
+      <h3 id="dlg-bureau-title">Nouveau Bureau / Service</h3>
+      <button class="close-btn" onclick="$('dlg-bureau').close()">✕</button>
+    </div>
+    <form onsubmit="return false;">
+      <label>Nom de la pièce / Service <span class="req">*</span>
+        <input id="bureau-nom" required placeholder="Ex: Bureau 05 ou Direction RH">
+      </label>
+      <div class="grid-2col-form">
+        <label>Bâtiment
+          <input id="bureau-bat" placeholder="Ex: Bâtiment A">
+        </label>
+        <label>Étage
+          <input id="bureau-etage" placeholder="Ex: 2ème étage">
+        </label>
+      </div>
+      <label>Responsable du lieu
+        <input id="bureau-resp" placeholder="Ex: Valérie Mercier">
+      </label>
+      <div class="dact">
+        <button type="button" class="btn gray" onclick="$('dlg-bureau').close()">Annuler</button>
+        <button type="button" class="btn btn-primary" id="btn-save-bureau">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 6. Modal Utilisateur -->
+  <dialog id="dlg-utilisateur">
+    <div class="dlg-header">
+      <h3 id="dlg-user-title">Nouvel Utilisateur</h3>
+      <button class="close-btn" onclick="$('dlg-utilisateur').close()">✕</button>
+    </div>
+    <form onsubmit="return false;">
+      <label>Nom complet <span class="req">*</span>
+        <input id="user-nom" required placeholder="Ex: Marie Curie">
+      </label>
+      <label>Adresse Email <span class="req">*</span>
+        <input id="user-email" type="email" required placeholder="marie.curie@entreprise.com">
+      </label>
+      <div class="grid-2col-form">
+        <label>Rôle
+          <select id="user-role">
+            <option value="Administrateur">Administrateur</option>
+            <option value="Gestionnaire" selected>Gestionnaire</option>
+            <option value="Magasinier">Magasinier</option>
+          </select>
+        </label>
+        <label>Statut
+          <select id="user-statut">
+            <option value="Actif" selected>Actif</option>
+            <option value="Inactif">Inactif</option>
+          </select>
+        </label>
+      </div>
+      <label>Mot de passe <small id="user-pwd-hint" class="hint" style="display:inline;margin-left:6px">(laisser vide pour ne pas modifier)</small>
+        <input id="user-pwd" type="password" placeholder="Mot de passe du compte">
+      </label>
+      <div class="dact">
+        <button type="button" class="btn gray" onclick="$('dlg-utilisateur').close()">Annuler</button>
+        <button type="button" class="btn btn-primary" id="btn-save-user">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Scripts -->
+  <script src="app.js"></script>
+</body>
+</html>
